@@ -3,15 +3,8 @@ const express = require("express");
 const session = require("express-session");
 const app = express();
 const bodyParser = require("body-parser");
-const Twilio = require("twilio");
-const connectDatabase = require("./config/DbConnection");
-const logModel = require("./Models/logs");
-const handleWhatsAppMessages = require("./BotHandlingMethods/handleWhatsAppMessages");
-if (typeof localStorage === "undefined" || localStorage === null) {
-  var LocalStorage = require("node-localstorage").LocalStorage;
-  localStorage = new LocalStorage("./localStorage");
-}
 
+const connectDatabase = require("./config/DbConnection");
 app.use(
   bodyParser.urlencoded({
     extended: true,
