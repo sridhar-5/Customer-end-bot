@@ -3,6 +3,7 @@ const express = require("express");
 const session = require("express-session");
 const app = express();
 const bodyParser = require("body-parser");
+const amqplib = require("amqplib");
 
 const connectDatabase = require("./config/DbConnection");
 app.use(
@@ -27,22 +28,44 @@ app.get("/", (request, response) => {
   response.status(200).send("Hello..! This is just to test.");
 });
 
-app.post(
-  "/push_notifications_from_message_queue",
-  async (request, response) => {
-    // const messageRequestBody = request.body;
+app.get("/push_notifications_from_message_queue", async (request, response) => {
+  //consume content from message queue
+  const queue = "UserMessageQueue";
 
-    // let twiml = new Twilio.twiml.MessagingResponse();
-    // // response to the user in thw whats app bot
-    // result.forEach((message) => {
-    //   twiml.message(message);
-    // });
+  amqplib
+    .connect("amqp://127.0.0.1:5672")
+    .then((connection) => connection.createChannel())
+    .then((channel) =>
+      channel.assertQueue(queue).then(() =>
+        channel.consume(queue, (message) => {
+          if (message) {
+            console.log(message.content.toString());
+            const messageContent = JSON.parse(message.content.toString());
+            client.messages
+              .create({
+                body: `Hey..! Product you may like is out..!\nName: ${messageContent.productName}\nPrice: ${messageContent.ProductPrice}\nDescription: ${messageContent.Description}}`,
+                from: "whatsapp:+14155238886",
+                to: `whatsapp:+91${messageContent.userPhone}`,
+              })
+              .then((message) => console.log(message.sid))
+              .done();
+          }
+        })
+      )
+    );
 
-    // response.end(twiml.toString());
+  // const messageRequestBody = request.body;
 
-    response.send("Hello..! This is just to test.");
-  }
-);
+  // let twiml = new Twilio.twiml.MessagingResponse();
+  // // response to the user in thw whats app bot
+  // result.forEach((message) => {
+  //   twiml.message(message);
+  // });
+
+  // response.end(twiml.toString());
+
+  response.send("Hello..! This is just to test.");
+});
 
 const PORT = process.env.PORT || 3000;
 
